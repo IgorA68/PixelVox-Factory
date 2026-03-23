@@ -1,0 +1,11 @@
+*.obj
+*.mtl
+__pycache__/
+*.pyc
+/.rlp_lint_report
+/.vox_gui_state.json
+notes.md
+/vox_models/*.png
+/vox_models/*_smoke.vox
+/vox_models/*_smoke.png
+/.pixel_gui_state.json

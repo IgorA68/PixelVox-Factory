@@ -1,0 +1,1 @@
+"""Procedural pixel-art tooling package."""

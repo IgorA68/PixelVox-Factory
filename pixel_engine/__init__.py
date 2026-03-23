@@ -1,0 +1,1 @@
+"""Internal implementation modules for procedural pixel-art generation."""
