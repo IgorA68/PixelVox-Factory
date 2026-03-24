@@ -104,6 +104,21 @@ class GeometryHelpersTests(unittest.TestCase):
 
 
 class SaveAsPngTests(unittest.TestCase):
+    def _render_png(self, fill_func, width=1, height=1, name='rendered', **kwargs):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = engine_pixel.save_as_png(
+                name,
+                width,
+                height,
+                fill_func,
+                output_dir=temp_dir,
+                progress=False,
+                **kwargs,
+            )
+
+            with Image.open(output_path) as image:
+                return image.copy()
+
     def test_save_as_png_rejects_non_callable_fill_func(self):
         with self.assertRaises(TypeError):
             engine_pixel.save_as_png('bad', 2, 2, None)
@@ -130,18 +145,12 @@ class SaveAsPngTests(unittest.TestCase):
             engine_pixel.save_as_png('bad', 2, 2, lambda *_: 0, scale=0)
 
     def test_save_as_png_maps_truthy_non_int_colors_to_palette_one(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_path = engine_pixel.save_as_png('truthy', 1, 1, lambda *_: 'filled', output_dir=temp_dir, progress=False)
-
-            with Image.open(output_path) as image:
-                self.assertEqual(image.getpixel((0, 0)), MAGICA_DEFAULT_PALETTE[1])
+        image = self._render_png(lambda *_: 'filled', name='truthy')
+        self.assertEqual(image.getpixel((0, 0)), MAGICA_DEFAULT_PALETTE[1])
 
     def test_save_as_png_skips_falsey_non_int_values(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_path = engine_pixel.save_as_png('empty', 1, 1, lambda *_: None, output_dir=temp_dir, progress=False)
-
-            with Image.open(output_path) as image:
-                self.assertEqual(image.getpixel((0, 0))[3], 0)
+        image = self._render_png(lambda *_: None, name='empty')
+        self.assertEqual(image.getpixel((0, 0))[3], 0)
 
     def test_save_as_png_creates_output_file_with_scaled_dimensions(self):
         def fill_func(x, y, width, height):
@@ -156,19 +165,8 @@ class SaveAsPngTests(unittest.TestCase):
                 self.assertIn(MAGICA_DEFAULT_PALETTE[5], image.getdata())
 
     def test_save_as_png_applies_palette_overrides(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_path = engine_pixel.save_as_png(
-                'palette_override',
-                1,
-                1,
-                lambda *_: 150,
-                palette={150: (1, 2, 3)},
-                output_dir=temp_dir,
-                progress=False,
-            )
-
-            with Image.open(output_path) as image:
-                self.assertEqual(image.getpixel((0, 0)), (1, 2, 3, 255))
+        image = self._render_png(lambda *_: 150, name='palette_override', palette={150: (1, 2, 3)})
+        self.assertEqual(image.getpixel((0, 0)), (1, 2, 3, 255))
 
     def test_save_as_png_supports_custom_output_directory(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -190,20 +188,15 @@ class SaveAsPngTests(unittest.TestCase):
         self.assertEqual(output_buffer.getvalue(), '')
 
     def test_save_as_png_supports_solid_background(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_path = engine_pixel.save_as_png(
-                'background',
-                2,
-                2,
-                lambda x, y, *_: 1 if (x, y) == (0, 0) else 0,
-                output_dir=temp_dir,
-                background=(10, 20, 30),
-                scale=1,
-                progress=False,
-            )
-
-            with Image.open(output_path) as image:
-                self.assertEqual(image.getpixel((1, 1)), (10, 20, 30, 255))
+        image = self._render_png(
+            lambda x, y, *_: 1 if (x, y) == (0, 0) else 0,
+            width=2,
+            height=2,
+            name='background',
+            background=(10, 20, 30),
+            scale=1,
+        )
+        self.assertEqual(image.getpixel((1, 1)), (10, 20, 30, 255))
 
 
 if __name__ == '__main__':

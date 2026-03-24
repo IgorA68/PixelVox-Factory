@@ -4,51 +4,26 @@ import unittest
 from unittest import mock
 from PIL import Image
 
+from tests.blueprint_contract_cases import BlueprintContractTestMixin
 from pixel_art import blueprint_utils as pixel_blueprint_utils
 from pixel_art import build_blueprint as build_pixel_blueprint
+from pixel_art.palettes import GEM_PALETTE
 
 
-class PixelBlueprintContractTests(unittest.TestCase):
-    def setUp(self):
-        self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.blueprints_dir = os.path.join(self.project_root, 'pixel_blueprints')
-
-    def test_resolve_blueprint_path_supports_short_name(self):
-        resolved_path = build_pixel_blueprint.resolve_blueprint_path('gem_icon')
-        expected_path = os.path.join(self.project_root, 'pixel_blueprints', 'gem_icon.py')
-        self.assertEqual(os.path.normcase(os.path.normpath(resolved_path)), os.path.normcase(os.path.normpath(expected_path)))
-
-    def test_all_blueprints_expose_expected_contract(self):
-        blueprint_files = pixel_blueprint_utils.discover_blueprint_files(self.blueprints_dir)
-        self.assertGreater(len(blueprint_files), 0)
-
-        for file_name in blueprint_files:
-            blueprint_path = os.path.join(self.blueprints_dir, file_name)
-            with self.subTest(blueprint=file_name):
-                module = build_pixel_blueprint.load_blueprint_module(blueprint_path)
-                pixel_blueprint_utils.validate_blueprint_module(module)
-
-    def test_blueprint_metadata_exposes_display_name_description_and_recommended_size(self):
-        module = build_pixel_blueprint.load_blueprint_module(os.path.join(self.blueprints_dir, 'gem_icon.py'))
-        metadata = pixel_blueprint_utils.get_blueprint_metadata(module, fallback_name='gem_icon')
-
-        self.assertEqual(metadata['display_name'], 'Gem Icon')
-        self.assertIsInstance(metadata['description'], str)
-        self.assertGreater(metadata['recommended_width'], 0)
-        self.assertGreater(metadata['recommended_height'], 0)
-        self.assertIsInstance(metadata['has_custom_palette'], bool)
-
-    def test_discover_blueprint_files_returns_sorted_python_files(self):
-        blueprint_files = pixel_blueprint_utils.discover_blueprint_files(self.blueprints_dir)
-        self.assertEqual(blueprint_files, sorted(blueprint_files))
-        self.assertTrue(all(file_name.endswith('.py') for file_name in blueprint_files))
+class PixelBlueprintContractTests(BlueprintContractTestMixin, unittest.TestCase):
+    blueprint_subdir = 'pixel_blueprints'
+    build_blueprint_module = build_pixel_blueprint
+    blueprint_utils_module = pixel_blueprint_utils
+    exemplar_blueprint = 'gem_icon.py'
+    exemplar_display_name = 'Gem Icon'
+    recommended_dimension_fields = ('recommended_width', 'recommended_height')
 
     def test_blueprint_supports_seed_is_detected_for_gem_icon(self):
-        module = build_pixel_blueprint.load_blueprint_module(os.path.join(self.blueprints_dir, 'gem_icon.py'))
+        module = self._load_blueprint('gem_icon.py')
         self.assertTrue(pixel_blueprint_utils.blueprint_supports_seed(module))
 
     def test_build_fill_func_keeps_seeded_blueprint_deterministic(self):
-        module = build_pixel_blueprint.load_blueprint_module(os.path.join(self.blueprints_dir, 'gem_icon.py'))
+        module = self._load_blueprint('gem_icon.py')
         fill_a = pixel_blueprint_utils.build_fill_func(module, seed=7)
         fill_b = pixel_blueprint_utils.build_fill_func(module, seed=7)
         fill_c = pixel_blueprint_utils.build_fill_func(module, seed=13)
@@ -64,6 +39,40 @@ class PixelBlueprintContractTests(unittest.TestCase):
 
         self.assertEqual(values_a, values_b)
         self.assertNotEqual(values_a, values_c)
+
+    def test_gem_icon_export_preserves_seeded_pixel_count_and_center_color(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = build_pixel_blueprint.build_blueprint_output(
+                'gem_icon',
+                seed=7,
+                output_dir=temp_dir,
+                scale=1,
+                quiet=True,
+            )
+
+            with Image.open(output_path) as image:
+                non_transparent_pixels = sum(1 for pixel in image.getdata() if pixel[3] > 0)
+                self.assertEqual(non_transparent_pixels, 43)
+                self.assertEqual(image.getpixel((8, 8)), (*GEM_PALETTE[121], 255))
+
+    def test_any_seeded_blueprint_builds_deterministically_with_non_empty_output(self):
+        file_name, module = self._find_seeded_blueprint_file()
+        width, height = pixel_blueprint_utils.get_blueprint_dimensions(module)
+        fill_a = pixel_blueprint_utils.build_fill_func(module, seed=7)
+        fill_b = pixel_blueprint_utils.build_fill_func(module, seed=7)
+        sample_points = []
+
+        for x in range(0, width, max(1, width // 4)):
+            for y in range(0, height, max(1, height // 4)):
+                sample_points.append((x, y))
+
+        with self.subTest(blueprint=file_name):
+            values_a = [fill_a(x, y, width, height) for x, y in sample_points]
+            values_b = [fill_b(x, y, width, height) for x, y in sample_points]
+            pixels = build_pixel_blueprint.engine._build_named_pixels('generic_seeded', width, height, fill_a, label='Building', progress=False)
+
+            self.assertEqual(values_a, values_b)
+            self.assertGreater(len(pixels), 0)
 
     def test_build_blueprint_output_supports_custom_output_directory_and_quiet_mode(self):
         with tempfile.TemporaryDirectory() as temp_dir:

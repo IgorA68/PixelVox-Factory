@@ -60,6 +60,27 @@ class GeometryHelpersTests(unittest.TestCase):
 
 
 class SaveAsVoxTests(unittest.TestCase):
+    def _capture_vox_export(self, fill_func, name='captured', width=1, depth=1, height=1, **kwargs):
+        captured = {}
+
+        class FakeWriter:
+            def __init__(self, path, vox_data):
+                captured['path'] = path
+                captured['vox_data'] = vox_data
+
+            def write(self):
+                return None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_models_dir = os.path.join(temp_dir, 'models')
+
+            with mock.patch.object(engine_vox, 'MODELS_DIR', fake_models_dir):
+                with mock.patch.object(engine_vox, 'VoxWriter', FakeWriter):
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        engine_vox.save_as_vox(name, width, depth, height, fill_func, **kwargs)
+
+        return captured
+
     def test_save_as_vox_rejects_non_callable_fill_func(self):
         with self.assertRaises(TypeError):
             engine_vox.save_as_vox('bad', 2, 2, 2, None)
@@ -82,45 +103,12 @@ class SaveAsVoxTests(unittest.TestCase):
             engine_vox.save_as_vox('bad', 1, 1, 1, lambda *_: -3)
 
     def test_save_as_vox_maps_truthy_non_int_colors_to_palette_one(self):
-        captured = {}
-
-        class FakeWriter:
-            def __init__(self, path, vox_data):
-                captured['path'] = path
-                captured['vox_data'] = vox_data
-
-            def write(self):
-                return None
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            fake_models_dir = os.path.join(temp_dir, 'models')
-
-            with mock.patch.object(engine_vox, 'MODELS_DIR', fake_models_dir):
-                with mock.patch.object(engine_vox, 'VoxWriter', FakeWriter):
-                    with contextlib.redirect_stdout(io.StringIO()):
-                        engine_vox.save_as_vox('truthy', 1, 1, 1, lambda *_: 'filled')
-
+        captured = self._capture_vox_export(lambda *_: 'filled', name='truthy')
         voxel = captured['vox_data'].models[0].voxels[0]
         self.assertEqual(voxel.c, 1)
 
     def test_save_as_vox_skips_falsey_non_int_values(self):
-        captured = {}
-
-        class FakeWriter:
-            def __init__(self, path, vox_data):
-                captured['vox_data'] = vox_data
-
-            def write(self):
-                return None
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            fake_models_dir = os.path.join(temp_dir, 'models')
-
-            with mock.patch.object(engine_vox, 'MODELS_DIR', fake_models_dir):
-                with mock.patch.object(engine_vox, 'VoxWriter', FakeWriter):
-                    with contextlib.redirect_stdout(io.StringIO()):
-                        engine_vox.save_as_vox('empty', 1, 1, 2, lambda *_args: None)
-
+        captured = self._capture_vox_export(lambda *_args: None, name='empty', height=2)
         self.assertEqual(captured['vox_data'].models[0].voxels, [])
 
     def test_save_as_vox_creates_output_file(self):
@@ -142,45 +130,13 @@ class SaveAsVoxTests(unittest.TestCase):
             self.assertGreater(os.path.getsize(output_path), 0)
 
     def test_save_as_vox_embeds_project_palette_by_default(self):
-        captured = {}
-
-        class FakeWriter:
-            def __init__(self, path, vox_data):
-                captured['vox_data'] = vox_data
-
-            def write(self):
-                return None
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            fake_models_dir = os.path.join(temp_dir, 'models')
-
-            with mock.patch.object(engine_vox, 'MODELS_DIR', fake_models_dir):
-                with mock.patch.object(engine_vox, 'VoxWriter', FakeWriter):
-                    with contextlib.redirect_stdout(io.StringIO()):
-                        engine_vox.save_as_vox('palette_default', 1, 1, 1, lambda *_: 150)
-
+        captured = self._capture_vox_export(lambda *_: 150, name='palette_default')
         vox_data = captured['vox_data']
         self.assertFalse(vox_data.default_palette)
         self.assertEqual(tuple(vox_data.palette[150]), MAGICA_DEFAULT_PALETTE[150])
 
     def test_save_as_vox_applies_palette_overrides(self):
-        captured = {}
-
-        class FakeWriter:
-            def __init__(self, path, vox_data):
-                captured['vox_data'] = vox_data
-
-            def write(self):
-                return None
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            fake_models_dir = os.path.join(temp_dir, 'models')
-
-            with mock.patch.object(engine_vox, 'MODELS_DIR', fake_models_dir):
-                with mock.patch.object(engine_vox, 'VoxWriter', FakeWriter):
-                    with contextlib.redirect_stdout(io.StringIO()):
-                        engine_vox.save_as_vox('palette_override', 1, 1, 1, lambda *_: 150, palette={150: (1, 2, 3)})
-
+        captured = self._capture_vox_export(lambda *_: 150, name='palette_override', palette={150: (1, 2, 3)})
         self.assertEqual(tuple(captured['vox_data'].palette[150]), (1, 2, 3, 255))
 
     def test_save_as_vox_supports_custom_output_directory(self):
