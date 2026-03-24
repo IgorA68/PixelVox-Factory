@@ -1,6 +1,6 @@
 # PixelVox Factory
 
-[![Tests](https://github.com/IgorA68/PVF/actions/workflows/tests.yml/badge.svg)](https://github.com/IgorA68/PVF/actions/workflows/tests.yml)
+[![Tests](https://github.com/IgorA68/PixelVox-Factory/actions/workflows/tests.yml/badge.svg)](https://github.com/IgorA68/PixelVox-Factory/actions/workflows/tests.yml)
 
 Turn object ideas into procedural voxel models and pixel-art assets with executable blueprints.
 
