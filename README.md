@@ -546,6 +546,12 @@ The project can move to a package layout later if one or more of these become im
 - external projects start importing engine helpers as a dependency;
 - the public API grows beyond the current lightweight scripts.
 
+## Acknowledgements
+
+This project relies on a small set of excellent Python tools, especially `py-vox-io` for `.vox` writing and `Pillow` for PNG image handling.
+
+Thanks to the authors and maintainers of these libraries for making lightweight creative tooling easier to build.
+
 ## Roadmap
 
 See `todo.md` for a detailed publication and development roadmap.
