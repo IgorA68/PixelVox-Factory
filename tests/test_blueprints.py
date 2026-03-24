@@ -15,7 +15,7 @@ class BlueprintContractTests(unittest.TestCase):
     def test_resolve_blueprint_path_supports_short_name(self):
         resolved_path = build_blueprint.resolve_blueprint_path('house')
         expected_path = os.path.join(self.project_root, 'vox_blueprints', 'house.py')
-        self.assertEqual(resolved_path, expected_path)
+        self.assertEqual(os.path.normcase(os.path.normpath(resolved_path)), os.path.normcase(os.path.normpath(expected_path)))
 
     def test_all_blueprints_expose_expected_contract(self):
         blueprint_files = blueprint_utils.discover_blueprint_files(self.blueprints_dir)

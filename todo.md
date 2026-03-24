@@ -79,9 +79,12 @@ Current documentation: pixel-art contract and examples now live in `docs/pixel_b
 
 ### Stage 6. Publication Readiness
 
+- [x] Add a minimal GitHub Actions workflow for automated test runs on push and pull request events.
 - [ ] Decide the first public release version once the voxel and pixel-art scope is frozen.
 - [ ] Add release tags for the first public release.
 - [ ] Do a final smoke pass across voxel and pixel-art entry points before publication.
+
+Current status: the repository now includes a basic CI workflow for the documented unittest suite, but the first public version number, release tag, and final manual smoke pass still remain open.
 
 ## Later Pixel-Art Steps
 

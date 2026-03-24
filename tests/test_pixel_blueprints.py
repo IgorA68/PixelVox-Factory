@@ -16,7 +16,7 @@ class PixelBlueprintContractTests(unittest.TestCase):
     def test_resolve_blueprint_path_supports_short_name(self):
         resolved_path = build_pixel_blueprint.resolve_blueprint_path('gem_icon')
         expected_path = os.path.join(self.project_root, 'pixel_blueprints', 'gem_icon.py')
-        self.assertEqual(resolved_path, expected_path)
+        self.assertEqual(os.path.normcase(os.path.normpath(resolved_path)), os.path.normcase(os.path.normpath(expected_path)))
 
     def test_all_blueprints_expose_expected_contract(self):
         blueprint_files = pixel_blueprint_utils.discover_blueprint_files(self.blueprints_dir)

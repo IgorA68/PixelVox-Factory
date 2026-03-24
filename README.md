@@ -1,5 +1,7 @@
 # PixelVox Factory
 
+[![Tests](https://github.com/IgorA68/PVF/actions/workflows/tests.yml/badge.svg)](https://github.com/IgorA68/PVF/actions/workflows/tests.yml)
+
 Turn object ideas into procedural voxel models and pixel-art assets with executable blueprints.
 
 Part voxel generator, part AI imagination sandbox, and part human-AI co-creation playground, the project explores how a language model can translate knowledge about real-world objects into executable 3D voxel forms.
@@ -492,6 +494,8 @@ Before the first public tag, the repository should ideally have:
 - one short release note entry based on [CHANGELOG.md](CHANGELOG.md);
 - a quick smoke pass on GUI launch, CLI build, and MagicaVoxel opening for the main showcase models;
 - a final README skim to ensure the screenshot set matches the current demo set.
+
+For a compact release checklist, see [docs/release_checklist.md](docs/release_checklist.md).
 
 ## Workflow Notes
 

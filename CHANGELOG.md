@@ -6,8 +6,11 @@ The format is inspired by Keep a Changelog and is intentionally lightweight for 
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-03-24
+
 ### Added
 
+- Minimal GitHub Actions CI workflow in [.github/workflows/tests.yml](.github/workflows/tests.yml) for running the documented unittest suite on push and pull request events.
 - New pixel-art geometry helpers: `is_line(...)`, `is_polyline(...)`, `is_polygon(...)`, `is_rect_outline(...)`, `is_circle_outline(...)`, `is_ellipse_outline(...)`, `is_diamond_outline(...)`, and `is_polygon_outline(...)` for contours, panel borders, ring-like shapes, and irregular silhouettes.
 - Procedural pixel-art runtime via [pixel_art/engine.py](pixel_art/engine.py) with a separate internal [pixel_engine/](pixel_engine) implementation layer.
 - Dedicated pixel blueprint loading, validation, metadata, and seed-handling utilities via [pixel_art/blueprint_utils.py](pixel_art/blueprint_utils.py).
